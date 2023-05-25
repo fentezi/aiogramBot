@@ -154,65 +154,98 @@ async def help_command(message: types.Message):
                          '/ip_pc - получает информацию о ПК(hostname, IP, MAC)\n', reply_markup=keyboard)
 
 
-@dp.message_handler()
-async def text_handler(message: types.Message):
-    message.text.lower()
-    if message.text == 'system':
-        await message.answer(system_inf())
-    elif message.text == 'ip':
-        await message.answer(ip_PC())
-    elif message.text == 'join':
-        await message.answer(join_classroom())
-    elif message.text == 'disconnect':
-        disconnect_class()
-    elif message.text == 'reboot':
-        await message.answer('Перезагружаем ПК...')
-        reboot()
-    elif message.text == 'off':
-        await message.answer('Выключение...')
-        power_off()
-    elif message.text == 'volume':
-        devices = AudioUtilities.GetSpeakers()
-        interface = devices.Activate(
-            IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        volume = cast(interface, POINTER(IAudioEndpointVolume))
-        await message.answer(f'Текущая громкость: {round(volume.GetMasterVolumeLevelScalar() * 100)}%',
-                             reply_markup=keyboard_volume)
-    elif message.text == 'media':
-        await message.answer('Media', reply_markup=keyboard_media)
-    elif message.text == 'screens':
-        monitors = get_monitors()
-        if len(monitors) > 0:
-            response = ""
-            i = 0
-            keyboard_screen = InlineKeyboardMarkup()
-            for monitor in monitors:
-                button = InlineKeyboardButton(text=f'Скриншот экрана №{i} ({monitor.width}x{monitor.height})',
-                                              callback_data=f'{i}')
-                keyboard_screen.add(button)
-                response += f"№{i}: {monitor.width}x{monitor.height}. Активный монитор: {monitor.is_primary}\n"
-                i += 1
-            await message.answer(f'Список экранов ({len(monitors)}):\n'
-                                 f'{response}', reply_markup=keyboard_screen)
-        else:
-            await message.answer("Монитор не найден")
+@dp.message_handler(commands=['system'])
+async def system_command(message: types.Message):
+    await message.answer(system_inf())
 
-    elif message.text == 'cameras':
-        cap = cv2.VideoCapture(0)
 
-        if not cap.isOpened():
-            await message.answer('Не удалось открыть камеру')
-            exit()
+@dp.message_handler(commands=['ip'])
+async def ip_command(message: types.Message):
+    await message.answer(ip_PC())
 
-        ret, frame = cap.read()
-        with tempfile.NamedTemporaryFile(suffix='.jpg', dir=tempfile.gettempdir(), delete=False) as temp_file:
-            cv2.imwrite(temp_file.name, frame)
-            cap.release()
-            temp_file.seek(0)
-            if os.path.exists(temp_file.name):
-                await bot.send_photo(message.chat.id, open(temp_file.name, 'rb'))
-                temp_file.close()
-                os.unlink(temp_file.name)
+
+@dp.message_handler(commands=['join'])
+async def join_command(message: types.Message):
+    await message.answer(join_classroom())
+
+
+@dp.message_handler(commands=['disconnect'])
+async def disconnect_command(message: types.Message):
+    disconnect_class()
+
+
+@dp.message_handler(commands=['reboot'])
+async def reboot_command(message: types.Message):
+    await message.answer('Перезагружаем ПК...')
+    reboot()
+
+
+@dp.message_handler(commands=['off'])
+async def off_command(message: types.Message):
+    await message.answer('Выключение...')
+    power_off()
+
+
+@dp.message_handler(commands=['volume'])
+async def volume_command(message: types.Message):
+    devices = AudioUtilities.GetSpeakers()
+    interface = devices.Activate(
+        IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+    volume = cast(interface, POINTER(IAudioEndpointVolume))
+    await message.answer(f'Текущая громкость: {round(volume.GetMasterVolumeLevelScalar() * 100)}%',
+                         reply_markup=keyboard_volume)
+
+
+@dp.message_handler(commands=['media'])
+async def media_command(message: types.Message):
+    await message.answer('Media', reply_markup=keyboard_media)
+
+
+@dp.message_handler(commands=['screens'])
+async def screens_command(message: types.Message):
+    monitors = get_monitors()
+    if len(monitors) > 0:
+        response = ""
+        i = 0
+        keyboard_screen = InlineKeyboardMarkup()
+        for monitor in monitors:
+            button = InlineKeyboardButton(text=f'Скриншот экрана №{i} ({monitor.width}x{monitor.height})',
+                                          callback_data=f'{i}')
+            keyboard_screen.add(button)
+            response += f"№{i}: {monitor.width}x{monitor.height}. Активный монитор: {monitor.is_primary}\n"
+            i += 1
+        await message.answer(f'Список экранов ({len(monitors)}):\n'
+                             f'{response}', reply_markup=keyboard_screen)
+    else:
+        await message.answer("Монитор не найден")
+
+
+@dp.message_handler(commands=['cameras'])
+async def cameras_command(message: types.Message):
+    cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        await message.answer('Не удалось открыть камеру')
+        exit()
+    ret, frame = cap.read()
+    with tempfile.NamedTemporaryFile(suffix='.jpg', dir=tempfile.gettempdir(), delete=False) as temp_file:
+        cv2.imwrite(temp_file.name, frame)
+        cap.release()
+        temp_file.seek(0)
+        if os.path.exists(temp_file.name):
+            await bot.send_photo(message.chat.id, open(temp_file.name, 'rb'))
+            temp_file.close()
+            os.unlink(temp_file.name)
+
+
+@dp.message_handler(content_types=['text'])
+async def media_controller(message: types.Message):
+    if message.text == 'Следуюющий трек':
+        pyautogui.press('nexttrack')
+    elif message.text == 'Предыдущий трек':
+        pyautogui.press('prevtrack', presses=2)
+    elif message.text == 'Стоп/Старт':
+        pyautogui.press('playpause')
 
 
 @dp.callback_query_handler(lambda callback_query: callback_query.data and callback_query.data.isdigit())

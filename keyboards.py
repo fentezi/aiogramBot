@@ -2,17 +2,17 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Создание кнопок
-button1 = KeyboardButton('system')
-button2 = KeyboardButton('ip')
-button3 = KeyboardButton('join')
-button4 = KeyboardButton('disconnect')
-button5 = KeyboardButton('volume')
-button6 = KeyboardButton('media')
-button7 = KeyboardButton('reboot')
-button8 = KeyboardButton('off')
-button9 = KeyboardButton('cameras')
-button10 = KeyboardButton('screens')
-button11 = KeyboardButton('file explorer')
+button1 = KeyboardButton('/system')
+button2 = KeyboardButton('/ip')
+button3 = KeyboardButton('/join')
+button4 = KeyboardButton('/disconnect')
+button5 = KeyboardButton('/volume')
+button6 = KeyboardButton('/media')
+button7 = KeyboardButton('/reboot')
+button8 = KeyboardButton('/off')
+button9 = KeyboardButton('/cameras')
+button10 = KeyboardButton('/screens')
+button11 = KeyboardButton('/file explorer')
 
 # Создание клавиатуры
 keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
