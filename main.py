@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import platform
+import re
 import socket
 import subprocess
 import tempfile
@@ -9,6 +10,7 @@ import time
 import uuid
 import webbrowser
 from ctypes import cast, POINTER
+from urllib.request import urlopen
 
 import cv2
 import psutil
@@ -64,12 +66,16 @@ def ip_PC():
     # Имя компьютера
     hostname = socket.gethostname()
     # Получаем IP-адрес
-    ip_address = socket.gethostbyname(hostname)
+    ip_address = str(urlopen('http://checkip.dyndns.com/')
+                     .read())
     # Получаем MAC-адрес
     mac_address = ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff) for i in range(0, 8 * 6, 8)][::-1])
     return "Имя компьютера: " + hostname + \
-           "\nIP-адрес: " + ip_address + \
+           "\nIP-адрес: " + re.compile(r'Address: (\d+\.\d+\.\d+\.\d+)').search(ip_address).group(1) + \
            "\nMAC-адрес: " + mac_address
+
+def browser(url):
+    webbrowser.open(url)
 
 
 def join_classroom():
@@ -154,9 +160,11 @@ async def help_command(message: types.Message):
                          '/ip_pc - получает информацию о ПК(hostname, IP, MAC)\n', reply_markup=keyboard)
 
 
-@dp.message_handler(commands=['system'])
+@dp.message_handler(commands=['system'], commands_prefix='💻')
 async def system_command(message: types.Message):
     await message.answer(system_inf())
+
+
 
 
 @dp.message_handler(commands=['ip'])
@@ -170,7 +178,7 @@ async def join_command(message: types.Message):
 
 
 @dp.message_handler(commands=['disconnect'])
-async def disconnect_command(message: types.Message):
+async def disconnect_command():
     disconnect_class()
 
 
@@ -238,16 +246,6 @@ async def cameras_command(message: types.Message):
             os.unlink(temp_file.name)
 
 
-@dp.message_handler(content_types=['text'])
-async def media_controller(message: types.Message):
-    if message.text == 'Следуюющий трек':
-        pyautogui.press('nexttrack')
-    elif message.text == 'Предыдущий трек':
-        pyautogui.press('prevtrack', presses=2)
-    elif message.text == 'Стоп/Старт':
-        pyautogui.press('playpause')
-
-
 @dp.callback_query_handler(lambda callback_query: callback_query.data and callback_query.data.isdigit())
 async def handle_monitor_screen(callback_query: types.CallbackQuery):
     screen_number = int(callback_query.data)
@@ -287,9 +285,24 @@ async def handle_volume(message: types.Message, state: FSMContext):
     await state.reset_state()
 
 
-@dp.callback_query_handler(lambda callback_query: CallbackQuery)
-async def mute_volume(callback_query: CallbackQuery):
+@dp.callback_query_handler(lambda callback_query: callback_query.data == 'mute')
+async def mute_volume(message: types.Message):
     adjust_volume(0)
+
+
+@dp.callback_query_handler(lambda callback_query: CallbackQuery)
+async def media_controller(callback_query: CallbackQuery):
+    if callback_query.data == 'btn_next':
+        pyautogui.press('nexttrack')
+    elif callback_query.data == 'btn_stop':
+        pyautogui.press('playpause')
+    elif callback_query.data == 'btn_back':
+        pyautogui.press('prevtrack', presses=2)
+
+@dp.message_handler(content_types=['text'])
+async def browser_open_url(message: types.Message):
+    browser(url=message.text)
+    await message.answer('Сайт открыт')
 
 
 if __name__ == '__main__':
