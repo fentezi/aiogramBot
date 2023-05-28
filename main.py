@@ -301,8 +301,11 @@ async def media_controller(callback_query: CallbackQuery):
 
 @dp.message_handler(content_types=['text'])
 async def browser_open_url(message: types.Message):
-    browser(url=message.text)
-    await message.answer('Сайт открыт')
+    if requests.get(message.text).status_code == 200:
+        browser(url=message.text)
+        await message.answer('Загрузка сайта...')
+    else:
+        await message.answer(f'Что-то пошло не так... Ошибка: {requests.get(message.text).status_code}')
 
 
 if __name__ == '__main__':
