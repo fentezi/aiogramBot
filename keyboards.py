@@ -12,7 +12,7 @@ button7 = KeyboardButton('/reboot')
 button8 = KeyboardButton('/off')
 button9 = KeyboardButton('/cameras')
 button10 = KeyboardButton('/screens')
-button11 = KeyboardButton('/file explorer')
+button11 = KeyboardButton('/file')
 
 
 # Создание клавиатуры

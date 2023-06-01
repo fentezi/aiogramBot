@@ -8,10 +8,11 @@ import subprocess
 import tempfile
 import time
 import uuid
+
 import webbrowser
 from ctypes import cast, POINTER
 from urllib.request import urlopen
-
+import string
 import cv2
 import psutil
 import pyautogui
@@ -50,7 +51,7 @@ def system_inf():
     uptime_work = str(datetime.timedelta(seconds=round(uptime.total_seconds())))
     info = {
         'Время работы ПК': uptime_work,
-        'Операционная система': platform.system(),
+        'Операционная система': platform.platform(terse=True),
         'Оперативная память': psutil.virtual_memory()[0],
         'Процессор': platform.processor(),
         'Машина': platform.machine()
@@ -73,6 +74,7 @@ def ip_PC():
     return "Имя компьютера: " + hostname + \
            "\nIP-адрес: " + re.compile(r'Address: (\d+\.\d+\.\d+\.\d+)').search(ip_address).group(1) + \
            "\nMAC-адрес: " + mac_address
+
 
 def browser(url):
     webbrowser.open(url)
@@ -165,8 +167,6 @@ async def system_command(message: types.Message):
     await message.answer(system_inf())
 
 
-
-
 @dp.message_handler(commands=['ip'])
 async def ip_command(message: types.Message):
     await message.answer(ip_PC())
@@ -184,14 +184,20 @@ async def disconnect_command():
 
 @dp.message_handler(commands=['reboot'])
 async def reboot_command(message: types.Message):
-    await message.answer('Перезагружаем ПК...')
-    reboot()
+    if platform.platform(terse=True)[:7] == 'Windows':
+        await message.answer('Перезагружаем ПК...')
+        reboot()
+    else:
+        await message.answer('Данная функция доступна только на Windows!')
 
 
 @dp.message_handler(commands=['off'])
 async def off_command(message: types.Message):
-    await message.answer('Выключение...')
-    power_off()
+    if platform.platform(terse=True)[:7] == 'Windows':
+        await message.answer('Выключение...')
+        power_off()
+    else:
+        await message.answer('Данная функция доступна только на Windows!')
 
 
 @dp.message_handler(commands=['volume'])
@@ -246,6 +252,24 @@ async def cameras_command(message: types.Message):
             os.unlink(temp_file.name)
 
 
+@dp.message_handler(commands=['file'])
+async def file_explorer_command(message: types.Message):
+    buttons = []
+    for disk in get_disklist():
+        button = InlineKeyboardButton(disk, callback_data=disk)
+        buttons.append(button)
+    reply_markup = InlineKeyboardMarkup(resize_keyboard = True).row(*buttons)
+    await message.answer(f'Выберите диск: ', reply_markup=reply_markup)
+
+def get_disklist():
+    disk_string = []
+    for c in string.ascii_uppercase:
+        disk = c + ':'
+        if os.path.isdir(disk):
+            disk_string.append(disk)
+    return disk_string
+
+
 @dp.callback_query_handler(lambda callback_query: callback_query.data and callback_query.data.isdigit())
 async def handle_monitor_screen(callback_query: types.CallbackQuery):
     screen_number = int(callback_query.data)
@@ -298,6 +322,7 @@ async def media_controller(callback_query: CallbackQuery):
         pyautogui.press('playpause')
     elif callback_query.data == 'btn_back':
         pyautogui.press('prevtrack', presses=2)
+
 
 @dp.message_handler(content_types=['text'])
 async def browser_open_url(message: types.Message):
