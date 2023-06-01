@@ -251,73 +251,18 @@ async def cameras_command(message: types.Message):
             temp_file.close()
             os.unlink(temp_file.name)
 
+
+# file_path = 'D:\\internetPython\\bot_pyautogui\\main.py'
+
 @dp.message_handler(commands=['file'])
 async def file_explorer_command(message: types.Message):
-    buttons = []
-    for disk in get_disklist():
-        button = InlineKeyboardButton(disk, callback_data=disk)
-        buttons.append(button)
-    reply_markup = InlineKeyboardMarkup(resize_keyboard = True).row(*buttons)
-    await message.answer(f'Выберите диск: ', reply_markup=reply_markup)
-
-def get_disklist():
-    disk_string = []
-    for c in string.ascii_uppercase:
-        disk = c + ':'
-        if os.path.isdir(disk):
-            disk_string.append(disk)
-    return disk_string
-
-global url_file
-url_file = []
-@dp.callback_query_handler(lambda callback_query: callback_query.data in get_disklist())
-async def handle_file_command(callback_query: types.CallbackQuery):
-    disk = callback_query.data
-    folders = get_folders_on_disk(disk)
-    buttons = []
-    for folder in folders:
-        button = InlineKeyboardButton(folder, callback_data=f"{disk}{folder}")
-        buttons.append(button)
-    reply_markup = InlineKeyboardMarkup(resize_keyboard=True).add(*buttons)
-    url_file.append(disk)
-    await callback_query.message.edit_text('Выберите папку:', reply_markup=reply_markup)
-
-def get_folders_on_disk(disk):
-    folders = []
-    root = os.path.join(disk, '')
-    for folder in os.listdir(root):
-        if os.path.isdir(os.path.join(root, folder)):
-            folders.append(folder)
-    return folders
-
-@dp.callback_query_handler(lambda callback_query: callback_query.data in get_folders_on_disk(url_file[0]))
-async  def handle_select_folder(callback_query: types.CallbackQuery):
-    folder = callback_query.data
-    items = select_folder(folder)
-    buttons = []
-    for item in items:
-        button = InlineKeyboardButton(folder, callback_data=f"{url_file}{folder}{item}")
-        buttons.append(button)
-    reply_markup = InlineKeyboardMarkup(resize_keyboard=True).add(*buttons)
-    url_file += f'{folder}'
-    await callback_query.message.edit_text('Выберите папку или файл:', reply_markup=reply_markup)
-
-
-async def select_folder(folder):
-    select_folders = []
-    root = os.path.join(folder)
-    for select_folder in os.listdir(root):
-        item_path = os.path.join(root, select_folder)
-        if os.path.isfile(item_path):
-            select_folders.append(select_folder)
-        elif os.path.isdir(item_path):
-            select_folders.append(select_folder)
-
-    return select_folders
-
-
-
-
+    file_path = message.text[6:]
+    file_path = os.path.normpath(file_path)
+    if os.path.exists(file_path):
+        input_file = types.InputFile(file_path)
+        await bot.send_document(message.chat.id, input_file)
+    else:
+        await message.answer('Файл не найден!')
 
 
 @dp.callback_query_handler(lambda callback_query: callback_query.data and callback_query.data.isdigit())
