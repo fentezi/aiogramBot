@@ -258,11 +258,14 @@ async def cameras_command(message: types.Message):
 async def file_explorer_command(message: types.Message):
     file_path = message.text[6:]
     file_path = os.path.normpath(file_path)
-    if os.path.exists(file_path):
-        input_file = types.InputFile(file_path)
-        await bot.send_document(message.chat.id, input_file)
-    else:
-        await message.answer('Файл не найден!')
+    try:
+        if os.path.exists(file_path):
+            input_file = types.InputFile(file_path)
+            await bot.send_document(message.chat.id, input_file)
+        else:
+            await message.answer('Файл не найден!')
+    except PermissionError:
+        await message.answer('Введите адрес файла!')
 
 
 @dp.callback_query_handler(lambda callback_query: callback_query.data and callback_query.data.isdigit())
