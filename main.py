@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 import time
 import uuid
-
+import shutil
 import webbrowser
 from ctypes import cast, POINTER
 from urllib.request import urlopen
@@ -260,7 +260,8 @@ async def file_explorer_command(message: types.Message):
     file_path = os.path.normpath(file_path)
     try:
         if os.path.exists(file_path):
-            input_file = types.InputFile(file_path)
+            zip_file = shutil.make_archive('test', 'zip', f'{file_path}')
+            input_file = types.InputFile(zip_file)
             await bot.send_document(message.chat.id, input_file)
         else:
             await message.answer('Файл не найден!')
