@@ -13,13 +13,14 @@ button8 = KeyboardButton('/off')
 button9 = KeyboardButton('/cameras')
 button10 = KeyboardButton('/screens')
 button11 = KeyboardButton('/file')
+button12 = KeyboardButton('/lock')
 
 
 # Создание клавиатуры
 keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
 keyboard.row(button1, button2, button3)
 keyboard.row(button4, button5, button6)
-keyboard.row(button7, button8)
+keyboard.row(button7, button8, button12)
 keyboard.row(button9, button10, button11)
 
 vol_button = InlineKeyboardButton("+-vol", callback_data="btn_volume")

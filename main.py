@@ -3,16 +3,16 @@ import logging
 import os
 import platform
 import re
+import shutil
 import socket
 import subprocess
 import tempfile
 import time
 import uuid
-import shutil
 import webbrowser
 from ctypes import cast, POINTER
 from urllib.request import urlopen
-import string
+
 import cv2
 import psutil
 import pyautogui
@@ -138,6 +138,10 @@ def reboot():
     subprocess.call(['shutdown', '/r', '/t', '1'])
 
 
+def lock():
+    subprocess.call('rundll32.exe user32.dll,LockWorkStation')
+
+
 def adjust_volume(volume_percent: int):
     """Устанавливает громкость на указанный процент."""
     if volume_percent != 0:
@@ -200,6 +204,12 @@ async def off_command(message: types.Message):
         await message.answer('Данная функция доступна только на Windows!')
 
 
+@dp.message_handler(commands=['lock'])
+async def lock_pc(message: types.Message):
+    lock()
+    await message.answer('ПК заблокирован!')
+
+
 @dp.message_handler(commands=['volume'])
 async def volume_command(message: types.Message):
     devices = AudioUtilities.GetSpeakers()
@@ -252,21 +262,27 @@ async def cameras_command(message: types.Message):
             os.unlink(temp_file.name)
 
 
-# file_path = 'D:\\internetPython\\bot_pyautogui\\main.py'
-
 @dp.message_handler(commands=['file'])
 async def file_explorer_command(message: types.Message):
-    file_path = message.text[6:]
-    file_path = os.path.normpath(file_path)
     try:
-        if os.path.exists(file_path):
-            zip_file = shutil.make_archive('test', 'zip', f'{file_path}')
-            input_file = types.InputFile(zip_file)
-            await bot.send_document(message.chat.id, input_file)
+        file_path = message.text[6:].strip()
+        if file_path:
+            file_path = os.path.normpath(file_path)
+            if os.path.exists(file_path):
+                if '.' in file_path:
+                    input_file = types.InputFile(file_path)
+                    await bot.send_document(message.chat.id, input_file)
+                else:
+                    zip_file = shutil.make_archive('file', 'zip', file_path)
+                    input_file = types.InputFile(zip_file)
+                    await bot.send_document(message.chat.id, input_file)
+                    os.remove(zip_file)
+            else:
+                await message.answer('Файл не найден!')
         else:
-            await message.answer('Файл не найден!')
-    except PermissionError:
-        await message.answer('Введите адрес файла!')
+            await message.answer('Введите адрес файла!')
+    except Exception as e:
+        await message.answer(f'Ошибка при создании архива: {str(e)}')
 
 
 @dp.callback_query_handler(lambda callback_query: callback_query.data and callback_query.data.isdigit())
